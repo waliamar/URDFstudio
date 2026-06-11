@@ -1,0 +1,6 @@
+# Workspace root. `src-tauri` needs system webview libs (webkit2gtk-4.1) to build,
+# so default-members keeps everyday `cargo test`/`cargo check` scoped to urdf-core.
+[workspace]
+resolver = "2"
+members = ["urdf-core", "src-tauri"]
+default-members = ["urdf-core"]
