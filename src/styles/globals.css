@@ -22,67 +22,103 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── App shell grid ── */
+/* ── App shell (flexbox, floating glass cards) ── */
 .app-shell {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  grid-template-rows: auto 1fr auto auto;
-  grid-template-columns: 240px 1fr 300px;
-  grid-template-areas:
-    "toolbar toolbar toolbar"
-    "tree    viewport inspector"
-    "bottom  bottom   bottom"
-    "status  status   status";
+  padding: 10px;
+  gap: 10px;
+  background: var(--scene-bg);
 }
-.app-shell.no-inspector {
-  grid-template-columns: 240px 1fr;
-  grid-template-areas:
-    "toolbar toolbar"
-    "tree    viewport"
-    "bottom  bottom"
-    "status  status";
+.app-mid {
+  flex: 1;
+  display: flex;
+  min-height: 0;
 }
 
-.toolbar {
-  grid-area: toolbar;
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
+
 .tree-panel {
-  grid-area: tree;
   overflow: auto;
-  border-right: 1px solid var(--border);
-  background: var(--bg-panel);
+  flex: none;
 }
 .viewport-panel {
-  grid-area: viewport;
+  flex: 1;
+  min-width: 0;
   position: relative;
   overflow: hidden;
 }
 .inspector-panel {
-  grid-area: inspector;
   overflow: auto;
-  border-left: 1px solid var(--border);
-  background: var(--bg-panel);
+  flex: none;
 }
 .bottom-panel {
-  grid-area: bottom;
-  height: 180px;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--border);
-  background: var(--bg-panel);
+  overflow: hidden;
+  flex: none;
 }
+
+/* ── Resize handles ── */
+.resize-handle {
+  flex: none;
+  position: relative;
+  z-index: 5;
+}
+.resize-handle.vertical {
+  width: 10px;
+  cursor: col-resize;
+}
+.resize-handle.horizontal {
+  height: 10px;
+  cursor: row-resize;
+}
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: var(--text-dim);
+  opacity: 0;
+  border-radius: 3px;
+  transition: opacity 0.12s;
+}
+.resize-handle.vertical::after { width: 3px; height: 40px; }
+.resize-handle.horizontal::after { height: 3px; width: 40px; }
+.resize-handle:hover::after,
+.resize-handle.dragging::after { opacity: 0.6; }
+
+/* ── Status bar (neutral frost) ── */
 .status-bar {
-  grid-area: status;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 12px;
+  color: var(--text-dim);
+  font-size: 12px;
 }
+.status-bar .dirty-dot { color: var(--text-bright); }
+
+/* thin translucent scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
 
 /* ── Toolbar ── */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border);
+  gap: 5px;
+  padding: 6px 10px;
   flex-wrap: wrap;
 }
 .toolbar .sep {
@@ -98,29 +134,19 @@ body {
 button {
   font: inherit;
   color: var(--text);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 3px 8px;
+  background: var(--glass-hover);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 5px 11px;
   cursor: pointer;
 }
-button:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
-}
-button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-button.active {
-  background: var(--accent);
-  border-color: var(--accent-hover);
-  color: #fff;
-}
+button:hover:not(:disabled) { background: var(--glass); }
+button:disabled { opacity: 0.4; cursor: default; }
+button.active,
 button.primary {
-  background: var(--accent);
-  border-color: var(--accent-hover);
-  color: #fff;
+  background: var(--glass-sel);
+  border-color: var(--stroke);
+  color: var(--text-bright);
 }
 
 /* ── Tree ── */
@@ -309,20 +335,6 @@ pre.xml-preview {
 .panel-empty {
   padding: 10px;
   color: var(--text-dim);
-}
-
-/* ── Status bar ── */
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 2px 10px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 12px;
-}
-.status-bar .dirty-dot {
-  color: #ffd166;
 }
 
 /* ── Color picker ── */

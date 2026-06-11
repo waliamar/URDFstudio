@@ -1,42 +1,25 @@
-/* src/styles/theme.css — CSS variables for dark (default) and light themes. */
+/* src/styles/theme.css — single flat visionOS-style glass theme. */
+:root {
+  --scene-bg: radial-gradient(120% 90% at 60% 10%, #232529 0%, #15171a 45%, #0c0d0f 100%);
 
-:root,
-:root[data-theme="dark"] {
-  --bg: #1e1e1e;
-  --bg-panel: #252526;
-  --bg-elevated: #2d2d30;
-  --bg-input: #3c3c3c;
-  --bg-hover: #2a2d2e;
-  --bg-selected: #094771;
-  --border: #3c3c3c;
-  --border-strong: #555;
-  --text: #cccccc;
-  --text-dim: #969696;
+  --glass: rgba(255, 255, 255, 0.10);
+  --glass-hover: rgba(255, 255, 255, 0.07);
+  --glass-sel: rgba(255, 255, 255, 0.18);
+  --inset: rgba(0, 0, 0, 0.24);
+
+  --stroke: rgba(255, 255, 255, 0.18);
+  --blur: blur(44px) saturate(125%);
+
+  --text: #f1f3f6;
+  --text-dim: #a7adb7;
   --text-bright: #ffffff;
-  --accent: #0e639c;
-  --accent-hover: #1177bb;
-  --error: #f14c4c;
-  --warning: #cca700;
+
+  --error: #f0b3b3;
+  --warning: #e7d29a;
+
+  --radius: 22px;
+  --radius-sm: 14px;
+
   --grid-cell: #404040;
   --grid-section: #606060;
-}
-
-:root[data-theme="light"] {
-  --bg: #ffffff;
-  --bg-panel: #f3f3f3;
-  --bg-elevated: #ececec;
-  --bg-input: #ffffff;
-  --bg-hover: #e8e8e8;
-  --bg-selected: #cce5ff;
-  --border: #d4d4d4;
-  --border-strong: #bbb;
-  --text: #1f1f1f;
-  --text-dim: #6e6e6e;
-  --text-bright: #000000;
-  --accent: #0e639c;
-  --accent-hover: #1177bb;
-  --error: #e51400;
-  --warning: #bf8803;
-  --grid-cell: #cfcfcf;
-  --grid-section: #aaaaaa;
 }
