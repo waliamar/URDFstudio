@@ -1,7 +1,7 @@
 // src/state/uiStore.ts
 import { create } from "zustand";
+import { clampSize, PANEL_LIMITS, type PanelKey } from "../lib/resize";
 
-export type Theme = "dark" | "light";
 export type BottomTab = "problems" | "xml";
 
 export interface Layers {
@@ -10,51 +10,88 @@ export interface Layers {
   inertial: boolean;
 }
 
+export interface PanelLayout {
+  treeW: number;
+  inspectorW: number;
+  bottomH: number;
+  treeCollapsed: boolean;
+  inspectorCollapsed: boolean;
+  bottomCollapsed: boolean;
+}
+
 interface UiState {
-  theme: Theme;
   layers: Layers;
   bottomTab: BottomTab;
+  layout: PanelLayout;
 
-  toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
   toggleLayer: (layer: keyof Layers) => void;
   setBottomTab: (tab: BottomTab) => void;
+  setPanelSize: (panel: PanelKey, px: number) => void;
+  toggleCollapsed: (panel: PanelKey) => void;
 }
 
-const THEME_KEY = "urdf-studio:theme";
+const LAYOUT_KEY = "urdf-studio:layout";
 
-function loadTheme(): Theme {
-  if (typeof localStorage === "undefined") return "dark";
-  const stored = localStorage.getItem(THEME_KEY);
-  return stored === "light" || stored === "dark" ? stored : "dark";
-}
+const DEFAULT_LAYOUT: PanelLayout = {
+  treeW: 232,
+  inspectorW: 296,
+  bottomH: 180,
+  treeCollapsed: false,
+  inspectorCollapsed: false,
+  bottomCollapsed: false,
+};
 
-function persistTheme(theme: Theme): void {
-  if (typeof localStorage !== "undefined") localStorage.setItem(THEME_KEY, theme);
-  if (typeof document !== "undefined") {
-    document.documentElement.setAttribute("data-theme", theme);
+function loadLayout(): PanelLayout {
+  if (typeof localStorage === "undefined") return DEFAULT_LAYOUT;
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    if (!raw) return DEFAULT_LAYOUT;
+    return { ...DEFAULT_LAYOUT, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_LAYOUT;
   }
 }
 
+function persistLayout(layout: PanelLayout): void {
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  }
+}
+
+const SIZE_FIELD: Record<PanelKey, keyof PanelLayout> = {
+  tree: "treeW",
+  inspector: "inspectorW",
+  bottom: "bottomH",
+};
+const COLLAPSE_FIELD: Record<PanelKey, keyof PanelLayout> = {
+  tree: "treeCollapsed",
+  inspector: "inspectorCollapsed",
+  bottom: "bottomCollapsed",
+};
+
 export const useUiStore = create<UiState>((set) => ({
-  theme: loadTheme(),
   layers: { visual: true, collision: false, inertial: false },
   bottomTab: "problems",
-
-  toggleTheme: () =>
-    set((s) => {
-      const theme: Theme = s.theme === "dark" ? "light" : "dark";
-      persistTheme(theme);
-      return { theme };
-    }),
-
-  setTheme: (theme) => {
-    persistTheme(theme);
-    set({ theme });
-  },
+  layout: loadLayout(),
 
   toggleLayer: (layer) =>
     set((s) => ({ layers: { ...s.layers, [layer]: !s.layers[layer] } })),
 
   setBottomTab: (tab) => set({ bottomTab: tab }),
+
+  setPanelSize: (panel, px) =>
+    set((s) => {
+      const { min, max } = PANEL_LIMITS[panel];
+      const layout = { ...s.layout, [SIZE_FIELD[panel]]: clampSize(px, 0, min, max) };
+      persistLayout(layout);
+      return { layout };
+    }),
+
+  toggleCollapsed: (panel) =>
+    set((s) => {
+      const field = COLLAPSE_FIELD[panel];
+      const layout = { ...s.layout, [field]: !s.layout[field] };
+      persistLayout(layout);
+      return { layout };
+    }),
 }));
