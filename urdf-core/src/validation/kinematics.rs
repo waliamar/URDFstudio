@@ -78,6 +78,14 @@ pub fn check_kinematics(robot: &Robot) -> Vec<ValidationIssue> {
                 target: Some(root.to_string()),
             });
         }
+    } else if roots.is_empty() && !robot.joints.is_empty() {
+        issues.push(ValidationIssue {
+            severity: Severity::Error,
+            code: "kinematic-loop".to_string(),
+            message: "no root link: every link is a child — the joint graph contains a cycle"
+                .to_string(),
+            target: None,
+        });
     }
 
     // Disconnected links: find connected components over the undirected

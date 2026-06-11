@@ -104,6 +104,20 @@ fn detects_kinematic_loop() {
 }
 
 #[test]
+fn detects_rootless_cycle() {
+    let mut robot = empty_robot();
+    // a -> b -> c -> a: every link is a child, no root link.
+    robot.links = vec![link("a"), link("b"), link("c")];
+    robot.joints = vec![
+        fixed_joint("j1", "a", "b"),
+        fixed_joint("j2", "b", "c"),
+        fixed_joint("j3", "c", "a"),
+    ];
+    let issues = validate(&robot);
+    assert!(has_code(&issues, "kinematic-loop"), "expected kinematic-loop, got: {issues:?}");
+}
+
+#[test]
 fn detects_non_positive_mass() {
     let mut robot = empty_robot();
     let mut l = link("a");
