@@ -8,6 +8,7 @@ import { useUiStore } from "../../state/uiStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { useRobotStore } from "../../state/robotStore";
 import { readMeshFile, resolveMeshPath } from "../../api/commands";
+import { dirname, isAbsolutePath } from "../../lib/paths";
 
 const DEFAULT_COLOR = "#999999";
 
@@ -40,6 +41,8 @@ function GeometryMesh({ geometry }: { geometry: Geometry }) {
 function useMeshGeometry(filename: string, scale: [number, number, number]) {
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
   const [failed, setFailed] = useState(false);
+  const filePath = useRobotStore((s) => s.filePath);
+  const urdfDir = filePath ? dirname(filePath) : "";
 
   useEffect(() => {
     let cancelled = false;
@@ -53,9 +56,9 @@ function useMeshGeometry(filename: string, scale: [number, number, number]) {
           throw new Error("unsupported mesh format");
         }
         let path = filename;
-        if (filename.startsWith("package://")) {
-          const resolved = await resolveMeshPath(filename, "");
-          if (!resolved) throw new Error("could not resolve package:// path");
+        if (!isAbsolutePath(filename)) {
+          const resolved = await resolveMeshPath(filename, urdfDir);
+          if (!resolved) throw new Error("could not resolve mesh path");
           path = resolved;
         }
         const bytes = await readMeshFile(path);
@@ -69,7 +72,7 @@ function useMeshGeometry(filename: string, scale: [number, number, number]) {
     })();
 
     return () => { cancelled = true; };
-  }, [filename, scale[0], scale[1], scale[2]]);
+  }, [filename, scale[0], scale[1], scale[2], urdfDir]);
 
   return { geom, failed };
 }
