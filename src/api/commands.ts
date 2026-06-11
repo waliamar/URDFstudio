@@ -1,0 +1,53 @@
+// src/api/commands.ts
+// Typed wrappers around the Tauri IPC command surface (PRD §7.3).
+// When not running inside a Tauri webview (e.g. plain `vite dev` in a browser)
+// every call is delegated to the mock implementation so the UI still works.
+import { invoke } from "@tauri-apps/api/core";
+import type { Robot } from "../types/robot";
+import type { ValidationIssue } from "../types/validation";
+import * as mock from "./mock";
+
+const isTauri = (): boolean => "__TAURI_INTERNALS__" in window;
+
+export function openUrdf(path: string): Promise<Robot> {
+  if (!isTauri()) return mock.openUrdf(path);
+  return invoke<Robot>("open_urdf", { path });
+}
+
+export function saveUrdf(path: string, robot: Robot): Promise<void> {
+  if (!isTauri()) return mock.saveUrdf(path, robot);
+  return invoke<void>("save_urdf", { path, robot });
+}
+
+export function serializeUrdf(robot: Robot): Promise<string> {
+  if (!isTauri()) return mock.serializeUrdf(robot);
+  return invoke<string>("serialize_urdf", { robot });
+}
+
+export function validateRobot(robot: Robot): Promise<ValidationIssue[]> {
+  if (!isTauri()) return mock.validateRobot(robot);
+  return invoke<ValidationIssue[]>("validate_robot", { robot });
+}
+
+export function resolveMeshPath(
+  packagePath: string,
+  urdfDir: string,
+): Promise<string | null> {
+  if (!isTauri()) return mock.resolveMeshPath(packagePath, urdfDir);
+  return invoke<string | null>("resolve_mesh_path", {
+    packagePath,
+    urdfDir,
+  });
+}
+
+export function readMeshFile(path: string): Promise<Uint8Array> {
+  if (!isTauri()) return mock.readMeshFile(path);
+  return invoke<number[]>("read_mesh_file", { path }).then(
+    (bytes) => new Uint8Array(bytes),
+  );
+}
+
+export function newRobot(name: string): Promise<Robot> {
+  if (!isTauri()) return mock.newRobot(name);
+  return invoke<Robot>("new_robot", { name });
+}
