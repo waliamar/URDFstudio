@@ -98,6 +98,38 @@ describe("upsertMaterial", () => {
   });
 });
 
+describe("interaction coalescing", () => {
+  const sample = {
+    name: "r",
+    links: [{ name: "a" }],
+    joints: [],
+    materials: [],
+  };
+
+  it("collapses many updates between begin/endInteraction into one undo entry", () => {
+    const s = useRobotStore.getState();
+    s.setRobot(structuredClone(sample)); // clears history
+    const temporal = useRobotStore.temporal.getState();
+    expect(temporal.pastStates.length).toBe(0);
+
+    s.beginInteraction();
+    s.updateLink("a", { name: "a" }); // no-op-shaped but new object
+    useRobotStore.getState().updateLink("a", { name: "a" });
+    useRobotStore.getState().updateLink("a", { name: "a" });
+    useRobotStore.getState().endInteraction();
+
+    expect(useRobotStore.temporal.getState().pastStates.length).toBe(1);
+  });
+
+  it("adds no history entry if nothing changed during the interaction", () => {
+    const s = useRobotStore.getState();
+    s.setRobot(structuredClone(sample));
+    s.beginInteraction();
+    s.endInteraction();
+    expect(useRobotStore.temporal.getState().pastStates.length).toBe(0);
+  });
+});
+
 describe("undo / redo via temporal", () => {
   it("undoes and redoes a mutation", () => {
     s().updateJoint("j1", { jointType: "prismatic" });

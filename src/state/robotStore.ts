@@ -13,6 +13,11 @@ interface RobotState {
   setRobot: (robot: Robot, filePath?: string | null) => void;
   markSaved: (path: string) => void;
 
+  /** Begin a continuous gesture (e.g. scrub): suspends undo history. */
+  beginInteraction: () => void;
+  /** End the gesture: records the whole change as ONE undo entry. */
+  endInteraction: () => void;
+
   updateLink: (name: string, patch: Partial<Link>) => void;
   updateJoint: (name: string, patch: Partial<Joint>) => void;
   renameLink: (oldName: string, newName: string) => void;
@@ -46,6 +51,8 @@ function mutate(
   set((s) => (s.robot ? { robot: fn(s.robot), dirty: true } : {}));
 }
 
+let interactionSnapshot: Robot | null = null;
+
 export const useRobotStore = create<RobotState>()(
   temporal(
     (set, get) => ({
@@ -60,6 +67,26 @@ export const useRobotStore = create<RobotState>()(
       },
 
       markSaved: (path) => set({ filePath: path, dirty: false }),
+
+      beginInteraction: () => {
+        interactionSnapshot = get().robot;
+        useRobotStore.temporal.getState().pause();
+      },
+
+      endInteraction: () => {
+        const temporal = useRobotStore.temporal.getState();
+        const final = get().robot;
+        if (interactionSnapshot && final && interactionSnapshot !== final) {
+          // Restore the pre-gesture state while still paused (unrecorded),
+          // resume, then re-apply the final value as a single tracked change.
+          set({ robot: interactionSnapshot });
+          temporal.resume();
+          set({ robot: final, dirty: true });
+        } else {
+          temporal.resume();
+        }
+        interactionSnapshot = null;
+      },
 
       updateLink: (name, patch) =>
         mutate(set, (r) => ({ ...r, links: patchByName(r.links, name, patch) })),
