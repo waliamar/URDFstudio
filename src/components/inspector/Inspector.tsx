@@ -8,7 +8,9 @@ export function Inspector() {
   const selected = useSelectionStore((s) => s.selected);
   const robot = useRobotStore((s) => s.robot);
 
-  if (!selected || !robot) return null;
+  if (!selected || !robot) {
+    return <div className="panel-empty">Select a link or joint to edit its properties.</div>;
+  }
 
   if (selected.kind === "link") {
     const link = robot.links.find((l) => l.name === selected.name);
