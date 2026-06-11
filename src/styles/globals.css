@@ -18,7 +18,7 @@ body {
   font-size: 13px;
   line-height: 1.4;
   color: var(--text);
-  background: var(--bg);
+  background: var(--scene-bg);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -124,7 +124,7 @@ body {
 .toolbar .sep {
   width: 1px;
   height: 18px;
-  background: var(--border-strong);
+  background: var(--stroke);
   margin: 0 4px;
 }
 .toolbar .spacer {
@@ -359,7 +359,7 @@ pre.xml-preview {
   cursor: pointer;
 }
 .problem-row:hover {
-  background: var(--bg-hover);
+  background: var(--glass-hover);
 }
 .problem-row .sev {
   flex: 0 0 auto;
