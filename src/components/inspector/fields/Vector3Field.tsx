@@ -8,14 +8,18 @@ interface Props {
   value: Vec3;
   labels?: [string, string, string];
   step?: number;
+  min?: number;
+  max?: number;
   onChange: (value: Vec3) => void;
 }
 
 export function Vector3Field({
   label,
   value,
-  labels = ["x", "y", "z"],
+  labels = ["X", "Y", "Z"],
   step,
+  min,
+  max,
   onChange,
 }: Props) {
   const set = (i: number, v: number) => {
@@ -26,13 +30,15 @@ export function Vector3Field({
   return (
     <div className="field">
       {label !== undefined && <label>{label}</label>}
-      <div className="vector3">
+      <div className="vec">
         {value.map((v, i) => (
           <NumberField
             key={i}
             label={labels[i]}
             value={v}
             step={step}
+            min={min}
+            max={max}
             onChange={(n) => set(i, n)}
           />
         ))}

@@ -232,42 +232,87 @@ button.primary {
 .field {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 5px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 .field > label {
-  flex: 0 0 70px;
+  flex: 0 0 64px;
   color: var(--text-dim);
 }
-.field input,
-.field select {
+/* generic text/select inputs (name fields, dropdowns) */
+.field > input,
+.field > select {
   flex: 1;
   min-width: 0;
   font: inherit;
   color: var(--text);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 2px 5px;
+  background: var(--inset);
+  border: 1px solid var(--stroke);
+  border-radius: 9px;
+  padding: 4px 8px;
 }
-.field input:focus,
-.field select:focus {
-  outline: 1px solid var(--accent-hover);
-  border-color: var(--accent-hover);
+.field > input:focus,
+.field > select:focus {
+  outline: none;
+  border-color: var(--text-dim);
 }
-.vector3 {
-  display: flex;
-  gap: 4px;
+
+/* Unity scrub-pill number field */
+.num {
   flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  background: var(--inset);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.12s;
 }
-.vector3 .field {
-  margin-bottom: 0;
-  gap: 2px;
-}
-.vector3 .field > label {
-  flex: 0 0 auto;
+.num.scrubbing,
+.num.editing { border-color: var(--text-dim); }
+.num .lab {
+  padding: 4px 8px;
   font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--glass-hover);
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
 }
+.num .lab:hover { background: var(--glass); }
+.num .val {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 9px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.num .val-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-bright);
+  font: inherit;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding: 4px 9px;
+}
+
+/* vector row: three pills that shrink to fit the panel */
+.vec {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.vec .num { flex: 1; }
 .field-row-label {
   color: var(--text-dim);
   margin: 6px 0 3px;

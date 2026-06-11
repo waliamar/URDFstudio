@@ -15,8 +15,6 @@ export function Toolbar() {
 
   const layers = useUiStore((s) => s.layers);
   const toggleLayer = useUiStore((s) => s.toggleLayer);
-  const theme = useUiStore((s) => s.theme);
-  const toggleTheme = useUiStore((s) => s.toggleTheme);
 
   const layerBtn = (key: keyof Layers, label: string) => (
     <button
@@ -42,9 +40,6 @@ export function Toolbar() {
       {layerBtn("collision", "Collision")}
       {layerBtn("inertial", "Inertial")}
       <span className="spacer" />
-      <button onClick={toggleTheme} title="Toggle theme">
-        {theme === "dark" ? "☾ Dark" : "☀ Light"}
-      </button>
     </div>
   );
 }
