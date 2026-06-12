@@ -9,6 +9,35 @@ export async function openUrdf(_path: string): Promise<Robot> {
   return structuredClone(sampleRobot);
 }
 
+export async function openDocument(_path: string): Promise<{
+  robot: Robot;
+  computedUrdf: string;
+  isXacro: boolean;
+  workspaceRoot: string | null;
+  sourceFiles: never[];
+  anchors: never[];
+}> {
+  const robot = structuredClone(sampleRobot);
+  return {
+    robot,
+    computedUrdf: serialize(robot),
+    isXacro: false,
+    workspaceRoot: null,
+    sourceFiles: [],
+    anchors: [],
+  };
+}
+
+export async function setXacroField(
+  _mainPath: string,
+  _filePath: string,
+  _valueStart: number,
+  _valueEnd: number,
+  _newText: string,
+): Promise<never> {
+  throw new Error("[mock] setXacroField is unavailable in browser mode");
+}
+
 export async function newRobot(name: string): Promise<Robot> {
   return {
     name: name || "robot",

@@ -7,6 +7,7 @@ import { PoseEditor } from "./PoseEditor";
 import { GeometryEditor } from "./GeometryEditor";
 import { InertialEditor } from "./InertialEditor";
 import { MaterialEditor } from "./MaterialEditor";
+import { useFieldGate } from "./useFieldGate";
 
 const zeroPose = { xyz: [0, 0, 0] as [number, number, number], rpy: [0, 0, 0] as [number, number, number] };
 
@@ -22,6 +23,7 @@ export function LinkForm({ link }: { link: Link }) {
   const updateLink = useRobotStore((s) => s.updateLink);
   const renameLink = useRobotStore((s) => s.renameLink);
   const select = useSelectionStore((s) => s.select);
+  const gate = useFieldGate("link", link.name);
 
   const patch = (p: Partial<Link>) => updateLink(link.name, p);
 
@@ -51,9 +53,9 @@ export function LinkForm({ link }: { link: Link }) {
       >
         {link.visual && (
           <>
-            <PoseEditor value={link.visual.origin} onChange={(origin) => patch({ visual: { ...link.visual!, origin } })} />
+            <PoseEditor value={link.visual.origin} onChange={(origin) => patch({ visual: { ...link.visual!, origin } })} gate={gate} base="visual.origin" />
             <div className="field-row-label">geometry</div>
-            <GeometryEditor value={link.visual.geometry} onChange={(geometry) => patch({ visual: { ...link.visual!, geometry } })} />
+            <GeometryEditor value={link.visual.geometry} onChange={(geometry) => patch({ visual: { ...link.visual!, geometry } })} gate={gate} base="visual" />
             <div className="field-row-label">material</div>
             <MaterialEditor
               value={link.visual.materialName}
@@ -71,9 +73,9 @@ export function LinkForm({ link }: { link: Link }) {
       >
         {link.collision && (
           <>
-            <PoseEditor value={link.collision.origin} onChange={(origin) => patch({ collision: { ...link.collision!, origin } })} />
+            <PoseEditor value={link.collision.origin} onChange={(origin) => patch({ collision: { ...link.collision!, origin } })} gate={gate} base="collision.origin" />
             <div className="field-row-label">geometry</div>
-            <GeometryEditor value={link.collision.geometry} onChange={(geometry) => patch({ collision: { ...link.collision!, geometry } })} />
+            <GeometryEditor value={link.collision.geometry} onChange={(geometry) => patch({ collision: { ...link.collision!, geometry } })} gate={gate} base="collision" />
           </>
         )}
       </Section>
@@ -85,7 +87,7 @@ export function LinkForm({ link }: { link: Link }) {
         onTogglePresent={() => patch({ inertial: link.inertial ? undefined : defaultInertial })}
       >
         {link.inertial && (
-          <InertialEditor value={link.inertial} onChange={(inertial) => patch({ inertial })} />
+          <InertialEditor value={link.inertial} onChange={(inertial) => patch({ inertial })} gate={gate} />
         )}
       </Section>
     </div>

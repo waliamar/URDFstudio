@@ -150,3 +150,72 @@ describe("undo / redo via temporal", () => {
     expect(s().robot?.joints[0].jointType).toBe("revolute");
   });
 });
+
+describe("setDocument (xacro)", () => {
+  it("loads computed/source fields and resets dirty", () => {
+    s().setDocument(
+      {
+        robot: makeRobot(),
+        computedUrdf: "<robot/>",
+        isXacro: true,
+        workspaceRoot: "/ws",
+        sourceFiles: [
+          { path: "/ws/src/a.xacro", label: "src/a.xacro", text: "<robot/>", editable: true },
+          { path: "/opt/ros/x.xacro", label: "$(find x)/x.xacro", text: "<robot/>", editable: false },
+        ],
+        anchors: [
+          { kind: "joint", name: "j1", field: "origin.xyz", fileIndex: 0, valueStart: 1, valueEnd: 6, valueKind: "literal" },
+        ],
+      },
+      "/ws/src/a.xacro",
+    );
+    expect(s().isXacro).toBe(true);
+    expect(s().computedUrdf).toBe("<robot/>");
+    expect(s().workspaceRoot).toBe("/ws");
+    expect(s().sourceFiles).toHaveLength(2);
+    expect(s().sourceFiles[0].editable).toBe(true);
+    expect(s().sourceFiles[1].editable).toBe(false);
+    expect(s().anchors).toHaveLength(1);
+    expect(s().dirty).toBe(false);
+  });
+
+  it("setRobot after a xacro doc clears xacro provenance", () => {
+    s().setDocument(
+      { robot: makeRobot(), computedUrdf: "<robot/>", isXacro: true, workspaceRoot: "/ws", sourceFiles: [], anchors: [] },
+      "/ws/src/a.xacro",
+    );
+    s().setRobot(makeRobot());
+    expect(s().isXacro).toBe(false);
+    expect(s().computedUrdf).toBeNull();
+    expect(s().sourceFiles).toHaveLength(0);
+    expect(s().anchors).toHaveLength(0);
+  });
+});
+
+describe("isEditable gating", () => {
+  it("everything editable for a plain URDF", () => {
+    s().setRobot(makeRobot());
+    expect(s().isEditable("joint", "j1", "origin.xyz")).toBe(true);
+    expect(s().isEditable("joint", "anything", "any.field")).toBe(true);
+  });
+
+  it("only anchored fields editable for a xacro", () => {
+    s().setDocument(
+      {
+        robot: makeRobot(),
+        computedUrdf: "<robot/>",
+        isXacro: true,
+        workspaceRoot: "/ws",
+        sourceFiles: [{ path: "/ws/src/a.xacro", label: "a", text: "x", editable: true }],
+        anchors: [
+          { kind: "joint", name: "j1", field: "origin.xyz", fileIndex: 0, valueStart: 0, valueEnd: 1, valueKind: "literal" },
+        ],
+      },
+      "/ws/src/a.xacro",
+    );
+    expect(s().isEditable("joint", "j1", "origin.xyz")).toBe(true);
+    // No anchor for the UR-style macro field ⇒ immutable.
+    expect(s().isEditable("joint", "shoulder_pan_joint", "origin.xyz")).toBe(false);
+    expect(s().isEditable("joint", "j1", "origin.rpy")).toBe(false);
+  });
+});

@@ -3,6 +3,7 @@
 use crate::model::*;
 use crate::CoreError;
 use quick_xml::events::{BytesStart, Event};
+use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
 /// Parse a URDF XML document into a [`Robot`].
@@ -49,6 +50,17 @@ pub fn parse_urdf(xml: &str) -> Result<Robot, CoreError> {
                     &mut materials,
                     Material { name: mat_name, color: None, texture: None },
                 );
+            }
+            // Any other container at this level (e.g. <ros2_control>,
+            // <transmission>, <gazebo>) may itself hold <joint>/<link>
+            // elements that are NOT kinematic robot members. Skip its whole
+            // subtree so those are never mistaken for top-level joints/links.
+            // (The <robot> start is matched above and intentionally descended.)
+            Event::Start(e) => {
+                let name = e.name().as_ref().to_vec();
+                reader
+                    .read_to_end_into(QName(&name), &mut Vec::new())
+                    .map_err(|err| CoreError::Parse(err.to_string()))?;
             }
             Event::Eof => break,
             _ => {}

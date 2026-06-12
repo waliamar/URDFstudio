@@ -1,10 +1,14 @@
+pub mod ament;
 pub mod mesh;
 pub mod model;
 pub mod parser;
 pub mod serializer;
+pub mod source_tree;
 pub mod validation;
 
-pub use mesh::resolve_mesh_path;
+pub use ament::{build_index_for, find_workspace_root, PackageIndex};
+pub use mesh::{resolve_mesh_path, resolve_mesh_path_indexed};
+pub use source_tree::{build_source_tree, extract_anchors, FieldAnchor, SourceFile};
 pub use model::*;
 pub use parser::parse_urdf;
 pub use serializer::serialize_urdf;

@@ -1,11 +1,17 @@
 mod commands;
+mod xacro;
+
+use commands::MeshIndexCache;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .manage(MeshIndexCache::default())
         .invoke_handler(tauri::generate_handler![
+            commands::open_document,
+            commands::set_xacro_field,
             commands::open_urdf,
             commands::save_urdf,
             commands::serialize_urdf,
