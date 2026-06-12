@@ -9,6 +9,18 @@ import * as mock from "./mock";
 
 const isTauri = (): boolean => "__TAURI_INTERNALS__" in window;
 
+/** A xacro source file in the assembled include tree (mirrors `SourceFile`). */
+export interface SourceFile {
+  /** Absolute resolved path on disk. */
+  path: string;
+  /** Display label: raw include string, or workspace-relative path for root. */
+  label: string;
+  /** Full file contents. */
+  text: string;
+  /** Whether edits to this file are permitted (write-back). */
+  editable: boolean;
+}
+
 /** Richer result of opening a document (mirrors `commands::OpenResult`). */
 export interface OpenResult {
   robot: Robot;
@@ -18,6 +30,8 @@ export interface OpenResult {
   isXacro: boolean;
   /** Detected colcon workspace root, if any. */
   workspaceRoot: string | null;
+  /** Ordered xacro source files (empty for plain URDF). */
+  sourceFiles: SourceFile[];
 }
 
 export function openDocument(path: string): Promise<OpenResult> {

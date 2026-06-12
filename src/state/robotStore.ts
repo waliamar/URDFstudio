@@ -4,12 +4,14 @@
 import { create } from "zustand";
 import { temporal } from "zundo";
 import type { Robot, Link, Joint, Material } from "../types/robot";
+import type { SourceFile } from "../api/commands";
 
 interface OpenDocument {
   robot: Robot;
   computedUrdf: string;
   isXacro: boolean;
   workspaceRoot: string | null;
+  sourceFiles: SourceFile[];
 }
 
 interface RobotState {
@@ -23,6 +25,8 @@ interface RobotState {
   isXacro: boolean;
   /** Detected colcon workspace root for the open document, if any. */
   workspaceRoot: string | null;
+  /** Ordered xacro source files for the Source view (empty for plain URDF). */
+  sourceFiles: SourceFile[];
 
   setRobot: (robot: Robot, filePath?: string | null) => void;
   /** Load a full document result from `openDocument`. */
@@ -78,6 +82,7 @@ export const useRobotStore = create<RobotState>()(
       computedUrdf: null,
       isXacro: false,
       workspaceRoot: null,
+      sourceFiles: [],
 
       setRobot: (robot, filePath) => {
         set({
@@ -88,6 +93,7 @@ export const useRobotStore = create<RobotState>()(
           computedUrdf: null,
           isXacro: false,
           workspaceRoot: null,
+          sourceFiles: [],
         });
         // Fresh document: discard any prior undo/redo history.
         useRobotStore.temporal.getState().clear();
@@ -101,6 +107,7 @@ export const useRobotStore = create<RobotState>()(
           computedUrdf: doc.computedUrdf,
           isXacro: doc.isXacro,
           workspaceRoot: doc.workspaceRoot,
+          sourceFiles: doc.sourceFiles,
         });
         useRobotStore.temporal.getState().clear();
       },

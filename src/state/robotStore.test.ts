@@ -150,3 +150,39 @@ describe("undo / redo via temporal", () => {
     expect(s().robot?.joints[0].jointType).toBe("revolute");
   });
 });
+
+describe("setDocument (xacro)", () => {
+  it("loads computed/source fields and resets dirty", () => {
+    s().setDocument(
+      {
+        robot: makeRobot(),
+        computedUrdf: "<robot/>",
+        isXacro: true,
+        workspaceRoot: "/ws",
+        sourceFiles: [
+          { path: "/ws/src/a.xacro", label: "src/a.xacro", text: "<robot/>", editable: true },
+          { path: "/opt/ros/x.xacro", label: "$(find x)/x.xacro", text: "<robot/>", editable: false },
+        ],
+      },
+      "/ws/src/a.xacro",
+    );
+    expect(s().isXacro).toBe(true);
+    expect(s().computedUrdf).toBe("<robot/>");
+    expect(s().workspaceRoot).toBe("/ws");
+    expect(s().sourceFiles).toHaveLength(2);
+    expect(s().sourceFiles[0].editable).toBe(true);
+    expect(s().sourceFiles[1].editable).toBe(false);
+    expect(s().dirty).toBe(false);
+  });
+
+  it("setRobot after a xacro doc clears xacro provenance", () => {
+    s().setDocument(
+      { robot: makeRobot(), computedUrdf: "<robot/>", isXacro: true, workspaceRoot: "/ws", sourceFiles: [] },
+      "/ws/src/a.xacro",
+    );
+    s().setRobot(makeRobot());
+    expect(s().isXacro).toBe(false);
+    expect(s().computedUrdf).toBeNull();
+    expect(s().sourceFiles).toHaveLength(0);
+  });
+});

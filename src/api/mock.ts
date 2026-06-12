@@ -14,6 +14,7 @@ export async function openDocument(_path: string): Promise<{
   computedUrdf: string;
   isXacro: boolean;
   workspaceRoot: string | null;
+  sourceFiles: never[];
 }> {
   const robot = structuredClone(sampleRobot);
   return {
@@ -21,6 +22,7 @@ export async function openDocument(_path: string): Promise<{
     computedUrdf: serialize(robot),
     isXacro: false,
     workspaceRoot: null,
+    sourceFiles: [],
   };
 }
 

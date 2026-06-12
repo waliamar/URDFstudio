@@ -6,9 +6,10 @@ use std::sync::Mutex;
 
 use serde::Serialize;
 use urdf_core::{
-    build_index_for, find_workspace_root, new_robot as core_new_robot, parse_urdf,
-    resolve_mesh_path as core_resolve_mesh_path, resolve_mesh_path_indexed,
-    serialize_urdf as core_serialize_urdf, validate, PackageIndex, Robot, ValidationIssue,
+    build_index_for, build_source_tree, find_workspace_root, new_robot as core_new_robot,
+    parse_urdf, resolve_mesh_path as core_resolve_mesh_path, resolve_mesh_path_indexed,
+    serialize_urdf as core_serialize_urdf, validate, PackageIndex, Robot, SourceFile,
+    ValidationIssue,
 };
 
 use crate::xacro;
@@ -33,6 +34,8 @@ pub struct OpenResult {
     pub is_xacro: bool,
     /// Detected colcon workspace root, if any.
     pub workspace_root: Option<String>,
+    /// Ordered xacro source files (empty for plain URDF), for the Source view.
+    pub source_files: Vec<SourceFile>,
 }
 
 #[tauri::command]
@@ -48,14 +51,26 @@ pub fn open_document(path: String) -> Result<OpenResult, String> {
     };
 
     let robot = parse_urdf(&computed_urdf).map_err(|e| format!("Parse error: {e}"))?;
-    let workspace_root =
-        find_workspace_root(Path::new(&path)).map(|p| p.to_string_lossy().into_owned());
+    let file_path = Path::new(&path);
+    let workspace_root_path = find_workspace_root(file_path);
+    let workspace_root = workspace_root_path
+        .as_ref()
+        .map(|p| p.to_string_lossy().into_owned());
+
+    // For xacro docs, assemble the ordered source-file tree for the Source view.
+    let source_files = if is_xacro {
+        let index = build_index_for(file_path);
+        build_source_tree(file_path, workspace_root_path.as_deref(), &index)
+    } else {
+        Vec::new()
+    };
 
     Ok(OpenResult {
         robot,
         computed_urdf,
         is_xacro,
         workspace_root,
+        source_files,
     })
 }
 
