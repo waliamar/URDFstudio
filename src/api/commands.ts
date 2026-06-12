@@ -21,6 +21,24 @@ export interface SourceFile {
   editable: boolean;
 }
 
+/** A writable field anchor (mirrors `FieldAnchor`). */
+export interface FieldAnchor {
+  /** Element kind: "joint" | "link" | "material". */
+  kind: string;
+  /** Element name. */
+  name: string;
+  /** Dotted field path, e.g. "origin.xyz", "axis", "limit.lower". */
+  field: string;
+  /** Index into `sourceFiles` of the file holding the value span. */
+  fileIndex: number;
+  /** Byte offset of the value start within that file's text. */
+  valueStart: number;
+  /** Byte offset (exclusive) of the value end. */
+  valueEnd: number;
+  /** "literal" | "property" | "arg". */
+  valueKind: string;
+}
+
 /** Richer result of opening a document (mirrors `commands::OpenResult`). */
 export interface OpenResult {
   robot: Robot;
@@ -32,11 +50,34 @@ export interface OpenResult {
   workspaceRoot: string | null;
   /** Ordered xacro source files (empty for plain URDF). */
   sourceFiles: SourceFile[];
+  /** Writable field anchors (empty for plain URDF). */
+  anchors: FieldAnchor[];
 }
 
 export function openDocument(path: string): Promise<OpenResult> {
   if (!isTauri()) return mock.openDocument(path);
   return invoke<OpenResult>("open_document", { path });
+}
+
+/**
+ * Splice `newText` into `[valueStart, valueEnd)` of `filePath`, re-expand
+ * `mainPath`, and return the refreshed document (offsets shift after a write).
+ */
+export function setXacroField(
+  mainPath: string,
+  filePath: string,
+  valueStart: number,
+  valueEnd: number,
+  newText: string,
+): Promise<OpenResult> {
+  if (!isTauri()) return mock.setXacroField(mainPath, filePath, valueStart, valueEnd, newText);
+  return invoke<OpenResult>("set_xacro_field", {
+    mainPath,
+    filePath,
+    valueStart,
+    valueEnd,
+    newText,
+  });
 }
 
 export function openUrdf(path: string): Promise<Robot> {

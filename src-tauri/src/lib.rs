@@ -11,6 +11,7 @@ pub fn run() {
         .manage(MeshIndexCache::default())
         .invoke_handler(tauri::generate_handler![
             commands::open_document,
+            commands::set_xacro_field,
             commands::open_urdf,
             commands::save_urdf,
             commands::serialize_urdf,

@@ -269,6 +269,22 @@ button.primary {
 }
 .num.scrubbing,
 .num.editing { border-color: var(--text-dim); }
+.num.disabled {
+  opacity: 0.4;
+}
+.num.disabled .lab { cursor: not-allowed; }
+.num.disabled .val { cursor: not-allowed; }
+.field > input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.color-swatch-readonly {
+  width: 100%;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--stroke);
+  margin-top: 6px;
+}
 .num .lab {
   padding: 4px 8px;
   font-size: 11px;

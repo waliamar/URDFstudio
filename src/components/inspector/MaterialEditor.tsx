@@ -3,6 +3,7 @@ import { RgbaColorPicker } from "react-colorful";
 import type { Material } from "../../types/robot";
 import { useRobotStore } from "../../state/robotStore";
 import { SelectField } from "./fields/SelectField";
+import { useFieldGate } from "./useFieldGate";
 
 interface Props {
   /** Currently assigned material name on the visual (undefined = none). */
@@ -24,9 +25,11 @@ function toUrdf(p: { r: number; g: number; b: number; a: number }): [number, num
 export function MaterialEditor({ value, onChange }: Props) {
   const materials = useRobotStore((s) => s.robot?.materials ?? []);
   const upsertMaterial = useRobotStore((s) => s.upsertMaterial);
+  const gate = useFieldGate("material", value ?? "");
 
   const current: Material | undefined = materials.find((m) => m.name === value);
   const color = current?.color ?? [0.6, 0.6, 0.6, 1];
+  const colorLocked = gate.disabled("color");
 
   const handleSelect = (selected: string) => {
     if (selected === NONE) return onChange(undefined);
@@ -47,11 +50,28 @@ export function MaterialEditor({ value, onChange }: Props) {
         options={[NONE, ...materials.map((m) => m.name), CREATE]}
         onChange={handleSelect}
       />
-      {current && (
-        <RgbaColorPicker
-          color={toPicker(color)}
-          onChange={(p) => upsertMaterial({ ...current, color: toUrdf(p) })}
+      {current && colorLocked && (
+        <div
+          className="color-swatch-readonly"
+          style={{
+            background: `rgba(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)}, ${color[3]})`,
+          }}
+          title="Color is macro-derived (read-only)"
         />
+      )}
+      {current && !colorLocked && (
+        <div
+          // Commit the spliced color back to source on release (not per-frame).
+          onPointerUp={() => {
+            const c = current.color ?? color;
+            gate.commitVec("color", c);
+          }}
+        >
+          <RgbaColorPicker
+            color={toPicker(color)}
+            onChange={(p) => upsertMaterial({ ...current, color: toUrdf(p) })}
+          />
+        </div>
       )}
     </div>
   );

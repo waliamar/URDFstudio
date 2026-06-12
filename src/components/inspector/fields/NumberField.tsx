@@ -10,6 +10,10 @@ interface Props {
   min?: number;
   max?: number;
   onChange: (value: number) => void;
+  /** Fired at a commit boundary (scrub end / typed commit) with the value. */
+  onCommit?: (value: number) => void;
+  /** Render immutable (no scrub, no typing) — e.g. macro-derived xacro field. */
+  disabled?: boolean;
 }
 
 function decimalsOf(step: number): number {
@@ -19,7 +23,16 @@ function decimalsOf(step: number): number {
 }
 
 /** Unity-style number field: drag the label to scrub, click the value to type. */
-export function NumberField({ label, value, step = 0.01, min, max, onChange }: Props) {
+export function NumberField({
+  label,
+  value,
+  step = 0.01,
+  min,
+  max,
+  onChange,
+  onCommit,
+  disabled = false,
+}: Props) {
   const precision = decimalsOf(step);
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
@@ -34,6 +47,7 @@ export function NumberField({ label, value, step = 0.01, min, max, onChange }: P
 
   // ── scrub (drag the label) ──
   const onLabelPointerDown = (e: React.PointerEvent) => {
+    if (disabled) return;
     e.preventDefault();
     scrubbing.current = true;
     useRobotStore.getState().beginInteraction();
@@ -51,6 +65,7 @@ export function NumberField({ label, value, step = 0.01, min, max, onChange }: P
     scrubbing.current = false;
     if (document.pointerLockElement) document.exitPointerLock();
     useRobotStore.getState().endInteraction();
+    onCommit?.(value);
   };
 
   // End the scrub if pointer lock is dropped without a pointerup (e.g. the user
@@ -65,20 +80,23 @@ export function NumberField({ label, value, step = 0.01, min, max, onChange }: P
   }, []);
 
   // ── click to edit ──
-  const startEdit = () => { setText(display); setEditing(true); };
+  const startEdit = () => { if (disabled) return; setText(display); setEditing(true); };
   const commit = (ok: boolean) => {
     if (ok) {
       const n = parseFloat(text);
       if (!Number.isNaN(n)) {
         const clamped = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
         onChange(clamped);
+        onCommit?.(clamped);
       }
     }
     setEditing(false);
   };
 
   return (
-    <div className={`num${scrubbing.current ? " scrubbing" : ""}${editing ? " editing" : ""}`}>
+    <div
+      className={`num${scrubbing.current ? " scrubbing" : ""}${editing ? " editing" : ""}${disabled ? " disabled" : ""}`}
+    >
       {label !== undefined && (
         <span
           className="lab"

@@ -11,6 +11,10 @@ interface Props {
   min?: number;
   max?: number;
   onChange: (value: Vec3) => void;
+  /** Fired at a commit boundary with the full (post-commit) vector. */
+  onCommit?: (value: Vec3) => void;
+  /** Render the whole vector immutable. */
+  disabled?: boolean;
 }
 
 export function Vector3Field({
@@ -21,11 +25,19 @@ export function Vector3Field({
   min,
   max,
   onChange,
+  onCommit,
+  disabled = false,
 }: Props) {
   const set = (i: number, v: number) => {
     const next: Vec3 = [...value];
     next[i] = v;
     onChange(next);
+  };
+  const commit = (i: number, v: number) => {
+    if (!onCommit) return;
+    const next: Vec3 = [...value];
+    next[i] = v;
+    onCommit(next);
   };
   return (
     <div className="field">
@@ -40,6 +52,8 @@ export function Vector3Field({
             min={min}
             max={max}
             onChange={(n) => set(i, n)}
+            onCommit={(n) => commit(i, n)}
+            disabled={disabled}
           />
         ))}
       </div>

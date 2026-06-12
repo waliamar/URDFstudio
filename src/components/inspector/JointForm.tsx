@@ -6,6 +6,7 @@ import { PoseEditor } from "./PoseEditor";
 import { NumberField } from "./fields/NumberField";
 import { Vector3Field } from "./fields/Vector3Field";
 import { SelectField } from "./fields/SelectField";
+import { useFieldGate } from "./useFieldGate";
 
 const JOINT_TYPES: JointType[] = [
   "fixed", "revolute", "continuous", "prismatic", "planar", "floating",
@@ -18,6 +19,7 @@ export function JointForm({ joint }: { joint: Joint }) {
   const renameJoint = useRobotStore((s) => s.renameJoint);
   const linkNames = useRobotStore((s) => s.robot?.links.map((l) => l.name) ?? []);
   const select = useSelectionStore((s) => s.select);
+  const gate = useFieldGate("joint", joint.name);
 
   const patch = (p: Partial<Joint>) => updateJoint(joint.name, p);
 
@@ -59,12 +61,17 @@ export function JointForm({ joint }: { joint: Joint }) {
       <SelectField label="child" value={joint.child} options={linkNames} onChange={(child) => patch({ child })} />
 
       <div className="field-row-label">origin</div>
-      <PoseEditor value={joint.origin} onChange={(origin) => patch({ origin })} />
+      <PoseEditor value={joint.origin} onChange={(origin) => patch({ origin })} gate={gate} base="origin" />
 
       {needsAxis && (
         <>
           <div className="field-row-label">axis</div>
-          <Vector3Field value={joint.axis ?? [0, 0, 1]} onChange={(axis) => patch({ axis })} />
+          <Vector3Field
+            value={joint.axis ?? [0, 0, 1]}
+            onChange={(axis) => patch({ axis })}
+            disabled={gate.disabled("axis")}
+            onCommit={(axis) => gate.commitVec("axis", axis)}
+          />
         </>
       )}
 
@@ -77,6 +84,8 @@ export function JointForm({ joint }: { joint: Joint }) {
               label={k}
               value={(joint.limit ?? defaultLimit)[k]}
               onChange={(n) => patch({ limit: { ...(joint.limit ?? defaultLimit), [k]: n } })}
+              disabled={gate.disabled(`limit.${k}`)}
+              onCommit={(n) => gate.commitNum(`limit.${k}`, n)}
             />
           ))}
         </>

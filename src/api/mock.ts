@@ -15,6 +15,7 @@ export async function openDocument(_path: string): Promise<{
   isXacro: boolean;
   workspaceRoot: string | null;
   sourceFiles: never[];
+  anchors: never[];
 }> {
   const robot = structuredClone(sampleRobot);
   return {
@@ -23,7 +24,18 @@ export async function openDocument(_path: string): Promise<{
     isXacro: false,
     workspaceRoot: null,
     sourceFiles: [],
+    anchors: [],
   };
+}
+
+export async function setXacroField(
+  _mainPath: string,
+  _filePath: string,
+  _valueStart: number,
+  _valueEnd: number,
+  _newText: string,
+): Promise<never> {
+  throw new Error("[mock] setXacroField is unavailable in browser mode");
 }
 
 export async function newRobot(name: string): Promise<Robot> {

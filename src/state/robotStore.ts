@@ -4,7 +4,8 @@
 import { create } from "zustand";
 import { temporal } from "zundo";
 import type { Robot, Link, Joint, Material } from "../types/robot";
-import type { SourceFile } from "../api/commands";
+import type { SourceFile, FieldAnchor } from "../api/commands";
+import { setXacroField } from "../api/commands";
 
 interface OpenDocument {
   robot: Robot;
@@ -12,6 +13,7 @@ interface OpenDocument {
   isXacro: boolean;
   workspaceRoot: string | null;
   sourceFiles: SourceFile[];
+  anchors: FieldAnchor[];
 }
 
 interface RobotState {
@@ -27,11 +29,29 @@ interface RobotState {
   workspaceRoot: string | null;
   /** Ordered xacro source files for the Source view (empty for plain URDF). */
   sourceFiles: SourceFile[];
+  /** Writable field anchors for the open xacro document. */
+  anchors: FieldAnchor[];
 
   setRobot: (robot: Robot, filePath?: string | null) => void;
   /** Load a full document result from `openDocument`. */
   setDocument: (doc: OpenDocument, filePath: string | null) => void;
   markSaved: (path: string) => void;
+
+  /**
+   * Whether `(kind, name, field)` may be edited. Always true for plain URDF;
+   * for a xacro it requires a writable source anchor (per-parameter gating).
+   */
+  isEditable: (kind: string, name: string, field: string) => boolean;
+  /**
+   * Persist a field edit on a xacro doc back to its source literal/definition,
+   * then apply the re-expanded document. No-op for plain URDF (use Save).
+   */
+  commitFieldToSource: (
+    kind: string,
+    name: string,
+    field: string,
+    valueString: string,
+  ) => Promise<void>;
 
   /** Begin a continuous gesture (e.g. scrub): suspends undo history. */
   beginInteraction: () => void;
@@ -83,6 +103,7 @@ export const useRobotStore = create<RobotState>()(
       isXacro: false,
       workspaceRoot: null,
       sourceFiles: [],
+      anchors: [],
 
       setRobot: (robot, filePath) => {
         set({
@@ -94,6 +115,7 @@ export const useRobotStore = create<RobotState>()(
           isXacro: false,
           workspaceRoot: null,
           sourceFiles: [],
+          anchors: [],
         });
         // Fresh document: discard any prior undo/redo history.
         useRobotStore.temporal.getState().clear();
@@ -108,11 +130,39 @@ export const useRobotStore = create<RobotState>()(
           isXacro: doc.isXacro,
           workspaceRoot: doc.workspaceRoot,
           sourceFiles: doc.sourceFiles,
+          anchors: doc.anchors,
         });
         useRobotStore.temporal.getState().clear();
       },
 
       markSaved: (path) => set({ filePath: path, dirty: false }),
+
+      isEditable: (kind, name, field) => {
+        const st = get();
+        if (!st.isXacro) return true;
+        return st.anchors.some(
+          (a) => a.kind === kind && a.name === name && a.field === field,
+        );
+      },
+
+      commitFieldToSource: async (kind, name, field, valueString) => {
+        const st = get();
+        if (!st.isXacro || !st.filePath) return;
+        const anchor = st.anchors.find(
+          (a) => a.kind === kind && a.name === name && a.field === field,
+        );
+        if (!anchor) return;
+        const file = st.sourceFiles[anchor.fileIndex];
+        if (!file) return;
+        const doc = await setXacroField(
+          st.filePath,
+          file.path,
+          anchor.valueStart,
+          anchor.valueEnd,
+          valueString,
+        );
+        get().setDocument(doc, st.filePath);
+      },
 
       beginInteraction: () => {
         interactionSnapshot = get().robot;
