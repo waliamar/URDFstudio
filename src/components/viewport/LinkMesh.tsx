@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js";
 import type { Link, Geometry, Material } from "../../types/robot";
 import { rpyToEuler } from "../../lib/transforms";
 import { useUiStore } from "../../state/uiStore";
@@ -37,35 +38,57 @@ function GeometryMesh({ geometry }: { geometry: Geometry }) {
   }
 }
 
-/** Async STL loader -> BufferGeometry; placeholder box on failure / DAE. */
-function useMeshGeometry(filename: string, scale: [number, number, number]) {
-  const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
+/** A loaded mesh asset: either an STL geometry or a DAE scene object. */
+type MeshAsset =
+  | { kind: "geometry"; geometry: THREE.BufferGeometry }
+  | { kind: "object"; object: THREE.Object3D };
+
+/** Resolve `filename` to an absolute path (via the package index when needed). */
+async function resolveAbsolute(filename: string, urdfDir: string): Promise<string> {
+  if (isAbsolutePath(filename)) return filename;
+  const resolved = await resolveMeshPath(filename, urdfDir);
+  if (!resolved) throw new Error("could not resolve mesh path");
+  return resolved;
+}
+
+/**
+ * Async mesh loader supporting STL (-> BufferGeometry) and Collada/DAE
+ * (-> Object3D scene). Returns a placeholder signal (`failed`) for unsupported
+ * formats or load errors.
+ */
+function useMeshAsset(filename: string, scale: [number, number, number]) {
+  const [asset, setAsset] = useState<MeshAsset | null>(null);
   const [failed, setFailed] = useState(false);
   const filePath = useRobotStore((s) => s.filePath);
   const urdfDir = filePath ? dirname(filePath) : "";
 
   useEffect(() => {
     let cancelled = false;
-    setGeom(null);
+    setAsset(null);
     setFailed(false);
 
     (async () => {
       try {
-        if (!filename.toLowerCase().endsWith(".stl")) {
-          // DAE and others: placeholder for now (next-session work).
+        const lower = filename.toLowerCase();
+        const path = await resolveAbsolute(filename, urdfDir);
+        const bytes = await readMeshFile(path);
+
+        if (lower.endsWith(".stl")) {
+          const g = new STLLoader().parse(bytes.buffer as ArrayBuffer);
+          g.scale(scale[0], scale[1], scale[2]);
+          g.computeVertexNormals();
+          if (!cancelled) setAsset({ kind: "geometry", geometry: g });
+        } else if (lower.endsWith(".dae")) {
+          const text = new TextDecoder().decode(bytes);
+          // The base path lets the loader resolve any relative texture refs.
+          const base = path.slice(0, path.lastIndexOf("/") + 1);
+          const collada = new ColladaLoader().parse(text, base);
+          const object = collada.scene;
+          object.scale.set(scale[0], scale[1], scale[2]);
+          if (!cancelled) setAsset({ kind: "object", object });
+        } else {
           throw new Error("unsupported mesh format");
         }
-        let path = filename;
-        if (!isAbsolutePath(filename)) {
-          const resolved = await resolveMeshPath(filename, urdfDir);
-          if (!resolved) throw new Error("could not resolve mesh path");
-          path = resolved;
-        }
-        const bytes = await readMeshFile(path);
-        const g = new STLLoader().parse(bytes.buffer as ArrayBuffer);
-        g.scale(scale[0], scale[1], scale[2]);
-        g.computeVertexNormals();
-        if (!cancelled) setGeom(g);
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -74,7 +97,23 @@ function useMeshGeometry(filename: string, scale: [number, number, number]) {
     return () => { cancelled = true; };
   }, [filename, scale[0], scale[1], scale[2], urdfDir]);
 
-  return { geom, failed };
+  return { asset, failed };
+}
+
+/** Tint every mesh material under `object` to reflect selection state. */
+function applySelectionEmissive(object: THREE.Object3D, selected: boolean) {
+  object.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of mats) {
+      const std = mat as THREE.MeshStandardMaterial;
+      if (std && "emissive" in std) {
+        std.emissive = new THREE.Color(selected ? "#2266aa" : "#000000");
+        std.emissiveIntensity = selected ? 0.6 : 0;
+      }
+    }
+  });
 }
 
 function MeshNode({
@@ -86,13 +125,22 @@ function MeshNode({
   matProps: { color: string; opacity: number };
   selected: boolean;
 }) {
-  const { geom, failed } = useMeshGeometry(geometry.filename, geometry.scale);
-  if (geom) {
+  const { asset, failed } = useMeshAsset(geometry.filename, geometry.scale);
+
+  // DAE scenes carry their own materials; reflect selection by tinting them.
+  useEffect(() => {
+    if (asset?.kind === "object") applySelectionEmissive(asset.object, selected);
+  }, [asset, selected]);
+
+  if (asset?.kind === "geometry") {
     return (
-      <mesh geometry={geom}>
+      <mesh geometry={asset.geometry}>
         <StdMaterial matProps={matProps} selected={selected} />
       </mesh>
     );
+  }
+  if (asset?.kind === "object") {
+    return <primitive object={asset.object} />;
   }
   // Placeholder while loading or on failure.
   return (

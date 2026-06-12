@@ -187,3 +187,32 @@ fn inline_material_reference_only_does_not_duplicate() {
     let count = robot.materials.iter().filter(|m| m.name == "green").count();
     assert_eq!(count, 1);
 }
+
+#[test]
+fn ignores_joints_nested_in_ros2_control() {
+    // ros2_control / transmission / gazebo blocks carry <joint> elements that
+    // are NOT kinematic robot members. Only the top-level joint must be parsed.
+    let xml = r#"<?xml version="1.0"?>
+<robot name="r">
+  <link name="base"/>
+  <link name="tool"/>
+  <ros2_control name="hw" type="system">
+    <joint name="shoulder_pan_joint">
+      <command_interface name="position"/>
+    </joint>
+  </ros2_control>
+  <transmission name="t">
+    <joint name="shoulder_pan_joint"/>
+  </transmission>
+  <joint name="base_to_tool" type="fixed">
+    <parent link="base"/>
+    <child link="tool"/>
+  </joint>
+</robot>"#;
+    let robot = parse_urdf(xml).expect("should parse");
+    assert_eq!(robot.joints.len(), 1, "only the kinematic joint is a member");
+    assert_eq!(robot.joints[0].name, "base_to_tool");
+    assert_eq!(robot.joints[0].parent, "base");
+    assert_eq!(robot.joints[0].child, "tool");
+    assert_eq!(robot.links.len(), 2);
+}

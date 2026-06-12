@@ -9,6 +9,21 @@ export async function openUrdf(_path: string): Promise<Robot> {
   return structuredClone(sampleRobot);
 }
 
+export async function openDocument(_path: string): Promise<{
+  robot: Robot;
+  computedUrdf: string;
+  isXacro: boolean;
+  workspaceRoot: string | null;
+}> {
+  const robot = structuredClone(sampleRobot);
+  return {
+    robot,
+    computedUrdf: serialize(robot),
+    isXacro: false,
+    workspaceRoot: null,
+  };
+}
+
 export async function newRobot(name: string): Promise<Robot> {
   return {
     name: name || "robot",

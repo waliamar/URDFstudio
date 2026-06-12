@@ -9,6 +9,22 @@ import * as mock from "./mock";
 
 const isTauri = (): boolean => "__TAURI_INTERNALS__" in window;
 
+/** Richer result of opening a document (mirrors `commands::OpenResult`). */
+export interface OpenResult {
+  robot: Robot;
+  /** xacro-expanded URDF text, or the original text for a plain URDF. */
+  computedUrdf: string;
+  /** Whether the opened file required xacro expansion. */
+  isXacro: boolean;
+  /** Detected colcon workspace root, if any. */
+  workspaceRoot: string | null;
+}
+
+export function openDocument(path: string): Promise<OpenResult> {
+  if (!isTauri()) return mock.openDocument(path);
+  return invoke<OpenResult>("open_document", { path });
+}
+
 export function openUrdf(path: string): Promise<Robot> {
   if (!isTauri()) return mock.openUrdf(path);
   return invoke<Robot>("open_urdf", { path });

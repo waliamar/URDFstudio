@@ -2,11 +2,12 @@
 import { useCallback, useEffect } from "react";
 import { useRobotStore } from "../state/robotStore";
 import { useSelectionStore } from "../state/selectionStore";
-import { openUrdf, saveUrdf, newRobot } from "../api/commands";
+import { openDocument, saveUrdf, newRobot } from "../api/commands";
 import { openUrdfDialog, saveUrdfDialog } from "../api/dialog";
 
 export function useFileOps() {
   const setRobot = useRobotStore((s) => s.setRobot);
+  const setDocument = useRobotStore((s) => s.setDocument);
   const markSaved = useRobotStore((s) => s.markSaved);
   const clearSelection = useSelectionStore((s) => s.clear);
 
@@ -21,27 +22,40 @@ export function useFileOps() {
   const doOpen = useCallback(async () => {
     const path = await openUrdfDialog();
     // In browser mode the dialog returns null; still load the mock sample.
-    const robot = await openUrdf(path ?? "");
-    setRobot(robot, path);
+    const doc = await openDocument(path ?? "");
+    setDocument(doc, path);
     clearSelection();
-  }, [setRobot, clearSelection]);
+  }, [setDocument, clearSelection]);
 
-  const doSaveAs = useCallback(async () => {
+  // Save the computed URDF to a new file (the only Save offered for xacro docs,
+  // which must never be overwritten with flattened URDF).
+  const doExportComputed = useCallback(async () => {
     const { robot, filePath } = useRobotStore.getState();
     if (!robot) return;
     const path = await saveUrdfDialog(filePath ?? undefined);
     if (!path) return;
     await saveUrdf(path, robot);
+  }, []);
+
+  const doSaveAs = useCallback(async () => {
+    const { robot, filePath, isXacro } = useRobotStore.getState();
+    if (!robot) return;
+    if (isXacro) return doExportComputed();
+    const path = await saveUrdfDialog(filePath ?? undefined);
+    if (!path) return;
+    await saveUrdf(path, robot);
     markSaved(path);
-  }, [markSaved]);
+  }, [markSaved, doExportComputed]);
 
   const doSave = useCallback(async () => {
-    const { robot, filePath } = useRobotStore.getState();
+    const { robot, filePath, isXacro } = useRobotStore.getState();
     if (!robot) return;
+    // Phase 1: never overwrite a .xacro with flattened URDF. Offer export.
+    if (isXacro) return doExportComputed();
     if (!filePath) return doSaveAs();
     await saveUrdf(filePath, robot);
     markSaved(filePath);
-  }, [markSaved, doSaveAs]);
+  }, [markSaved, doSaveAs, doExportComputed]);
 
   // Warn on close when there are unsaved changes (works in Tauri webview too).
   useEffect(() => {
@@ -55,5 +69,5 @@ export function useFileOps() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  return { doNew, doOpen, doSave, doSaveAs };
+  return { doNew, doOpen, doSave, doSaveAs, doExportComputed };
 }

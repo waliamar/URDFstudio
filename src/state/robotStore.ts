@@ -5,12 +5,28 @@ import { create } from "zustand";
 import { temporal } from "zundo";
 import type { Robot, Link, Joint, Material } from "../types/robot";
 
+interface OpenDocument {
+  robot: Robot;
+  computedUrdf: string;
+  isXacro: boolean;
+  workspaceRoot: string | null;
+}
+
 interface RobotState {
   robot: Robot | null;
   filePath: string | null;
   dirty: boolean;
 
+  /** Computed (xacro-expanded or original) URDF text for the Computed view. */
+  computedUrdf: string | null;
+  /** Whether the open document is a xacro (in-place Save is disabled). */
+  isXacro: boolean;
+  /** Detected colcon workspace root for the open document, if any. */
+  workspaceRoot: string | null;
+
   setRobot: (robot: Robot, filePath?: string | null) => void;
+  /** Load a full document result from `openDocument`. */
+  setDocument: (doc: OpenDocument, filePath: string | null) => void;
   markSaved: (path: string) => void;
 
   /** Begin a continuous gesture (e.g. scrub): suspends undo history. */
@@ -59,10 +75,33 @@ export const useRobotStore = create<RobotState>()(
       robot: null,
       filePath: null,
       dirty: false,
+      computedUrdf: null,
+      isXacro: false,
+      workspaceRoot: null,
 
       setRobot: (robot, filePath) => {
-        set({ robot, filePath: filePath ?? null, dirty: false });
+        set({
+          robot,
+          filePath: filePath ?? null,
+          dirty: false,
+          // A bare robot (new/empty doc) carries no xacro provenance.
+          computedUrdf: null,
+          isXacro: false,
+          workspaceRoot: null,
+        });
         // Fresh document: discard any prior undo/redo history.
+        useRobotStore.temporal.getState().clear();
+      },
+
+      setDocument: (doc, filePath) => {
+        set({
+          robot: doc.robot,
+          filePath,
+          dirty: false,
+          computedUrdf: doc.computedUrdf,
+          isXacro: doc.isXacro,
+          workspaceRoot: doc.workspaceRoot,
+        });
         useRobotStore.temporal.getState().clear();
       },
 
