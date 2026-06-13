@@ -226,6 +226,7 @@ export function LinkMesh({ link }: { link: Link }) {
     parts.push(
       <group
         key="visual"
+        name={`linkvisual:${link.name}`}
         position={link.visual.origin.xyz}
         rotation={rpyToEuler(link.visual.origin.rpy)}
         onClick={(e) => { e.stopPropagation(); select("link", link.name); }}

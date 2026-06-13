@@ -9,8 +9,11 @@ function NodeGroup({ node }: { node: LinkNode }) {
     <group>
       <LinkMesh link={node.link} />
       {node.children.map(({ joint, node: childNode }) => (
+        // This wrapper's LOCAL transform == joint.origin, so the transform
+        // gizmo can read it straight back. Named for getObjectByName lookup.
         <group
           key={joint.name}
+          name={`link:${childNode.link.name}`}
           position={joint.origin.xyz}
           rotation={rpyToEuler(joint.origin.rpy)}
         >
@@ -28,7 +31,9 @@ export function RobotModel() {
   return (
     <>
       {roots.map((node) => (
-        <NodeGroup key={node.link.name} node={node} />
+        <group key={node.link.name} name={`link:${node.link.name}`}>
+          <NodeGroup node={node} />
+        </group>
       ))}
     </>
   );
