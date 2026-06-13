@@ -1,9 +1,40 @@
 // src/components/viewport/Viewport.tsx
+import { useRef } from "react";
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid } from "@react-three/drei";
+import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useSelectionStore } from "../../state/selectionStore";
 import { RobotModel } from "./RobotModel";
 import { TransformGizmo } from "./TransformGizmo";
+import { useViewportControls } from "./useViewportControls";
+
+/** OrbitControls remapped to a Unity Scene-view subset, plus the corner axis
+ *  gizmo. Lives inside <Canvas> so it can use the r3f hooks. */
+function ViewportControls() {
+  const controls = useRef<OrbitControlsImpl>(null);
+  useViewportControls(controls);
+  return (
+    <>
+      <OrbitControls
+        ref={controls}
+        makeDefault
+        enableDamping
+        mouseButtons={{
+          LEFT: THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.PAN,
+          RIGHT: THREE.MOUSE.DOLLY,
+        }}
+      />
+      <GizmoHelper alignment="bottom-right" margin={[72, 72]}>
+        <GizmoViewport
+          axisColors={["#e0566a", "#7bd47b", "#5a8bf0"]}
+          labelColor="#15171a"
+        />
+      </GizmoHelper>
+    </>
+  );
+}
 
 export function Viewport() {
   const clear = useSelectionStore((s) => s.clear);
@@ -32,8 +63,7 @@ export function Viewport() {
       </group>
 
       <TransformGizmo />
-
-      <OrbitControls makeDefault enableDamping />
+      <ViewportControls />
     </Canvas>
   );
 }
