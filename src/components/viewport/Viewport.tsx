@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import { useSelectionStore } from "../../state/selectionStore";
 import { RobotModel } from "./RobotModel";
+import { TransformGizmo } from "./TransformGizmo";
 
 export function Viewport() {
   const clear = useSelectionStore((s) => s.clear);
@@ -29,6 +30,8 @@ export function Viewport() {
       <group rotation={[-Math.PI / 2, 0, 0]}>
         <RobotModel />
       </group>
+
+      <TransformGizmo />
 
       <OrbitControls makeDefault enableDamping />
     </Canvas>
