@@ -50,6 +50,8 @@ function useGizmoTarget(): { target: THREE.Object3D | null; commit: Commit | nul
   }
 
   // Resolve the Object3D once the scene reflects the current selection/model.
+  // During a drag, committing re-renders RobotModel but getObjectByName returns
+  // the SAME Object3D instance, so setTarget is a no-op (no loop / no detach).
   useEffect(() => {
     setTarget(objectName ? scene.getObjectByName(objectName) ?? null : null);
   }, [scene, objectName, robot]);
@@ -75,6 +77,13 @@ export function TransformGizmo() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Safety net: if the gizmo unmounts mid-drag (selection cleared or the
+  // dragged object deleted), close the interaction so the undo store doesn't
+  // stay paused. endInteraction is a no-op when no drag is in progress.
+  useEffect(() => {
+    return () => { useRobotStore.getState().endInteraction(); };
+  }, [target]);
 
   if (!target || !commit) return null;
 
