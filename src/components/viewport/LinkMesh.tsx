@@ -5,9 +5,11 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js";
 import type { Link, Geometry, Material } from "../../types/robot";
 import { rpyToEuler } from "../../lib/transforms";
+import { neutralizeColladaUpAxis } from "../../lib/collada";
 import { useUiStore } from "../../state/uiStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { useRobotStore } from "../../state/robotStore";
+import { useShallow } from "zustand/react/shallow";
 import { readMeshFile, resolveMeshPath } from "../../api/commands";
 import { dirname, isAbsolutePath } from "../../lib/paths";
 
@@ -84,6 +86,11 @@ function useMeshAsset(filename: string, scale: [number, number, number]) {
           const base = path.slice(0, path.lastIndexOf("/") + 1);
           const collada = new ColladaLoader().parse(text, base);
           const object = collada.scene;
+          // ColladaLoader rotates Z_UP assets by -90deg about X to reach
+          // three.js Y-up. URDF Studio already converts Z-up -> Y-up globally
+          // (Viewport) and the DAE vertices live in the URDF link frame, so the
+          // loader's extra rotation just misaligns each link's mesh -> drop it.
+          neutralizeColladaUpAxis(object);
           object.scale.set(scale[0], scale[1], scale[2]);
           if (!cancelled) setAsset({ kind: "object", object });
         } else {
@@ -203,7 +210,7 @@ function GeometryWithMaterial({
 
 export function LinkMesh({ link }: { link: Link }) {
   const layers = useUiStore((s) => s.layers);
-  const materials = useRobotStore((s) => s.robot?.materials ?? []);
+  const materials = useRobotStore(useShallow((s) => s.robot?.materials ?? []));
   const selected = useSelectionStore((s) => s.selected);
   const select = useSelectionStore((s) => s.select);
 

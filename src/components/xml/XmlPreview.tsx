@@ -5,6 +5,8 @@ import { useSelectionStore } from "../../state/selectionStore";
 import { serializeUrdf } from "../../api/commands";
 import type { SourceFile } from "../../api/commands";
 import { debounce } from "../../lib/debounce";
+import { findElementLocation } from "../../lib/sourceMatch";
+import { HighlightedXml, XmlLine } from "./XmlLine";
 
 type Tab = "source" | "computed";
 
@@ -37,7 +39,7 @@ export function XmlPreview() {
 
   // Plain URDF: single live-serialized view, no tabs.
   if (!isXacro) {
-    return <pre className="xml-preview">{xml || "<!-- no robot -->"}</pre>;
+    return <HighlightedXml text={xml || "<!-- no robot -->"} />;
   }
 
   return (
@@ -59,7 +61,7 @@ export function XmlPreview() {
       {tab === "source" ? (
         <SourceView files={sourceFiles} />
       ) : (
-        <pre className="xml-preview">{computedUrdf || "<!-- empty -->"}</pre>
+        <HighlightedXml text={computedUrdf || "<!-- empty -->"} />
       )}
     </div>
   );
@@ -70,19 +72,19 @@ function SourceView({ files }: { files: SourceFile[] }) {
   const selected = useSelectionStore((s) => s.selected);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll the first line matching the selected element into view.
+  // Locate the selected element's definition, tolerating xacro-templated names
+  // (e.g. source `${prefix}base_link` vs computed `ur16e_base_link`).
+  const loc = useMemo(
+    () => (selected ? findElementLocation(files, selected.kind, selected.name) : null),
+    [files, selected],
+  );
+
+  // Scroll the highlighted line into view when the match changes.
   useEffect(() => {
-    if (!selected) return;
+    if (!loc) return;
     const el = containerRef.current?.querySelector<HTMLElement>(".source-line.match");
     el?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [selected, files]);
-
-  // Only one block highlights: the first file that defines the selected name.
-  const matchFileIndex = useMemo(() => {
-    if (!selected) return -1;
-    const token = `name="${selected.name}"`;
-    return files.findIndex((f) => f.text.includes(token));
-  }, [files, selected]);
+  }, [loc]);
 
   if (files.length === 0) {
     return <div className="source-empty">No source files.</div>;
@@ -94,31 +96,21 @@ function SourceView({ files }: { files: SourceFile[] }) {
         <SourceFileBlock
           key={f.path}
           file={f}
-          selectedName={i === matchFileIndex ? selected?.name ?? null : null}
+          matchLine={loc && loc.fileIndex === i ? loc.lineIndex : -1}
         />
       ))}
     </div>
   );
 }
 
-/** A `name="<sel>"` token marks the line that defines the selected element. */
-function lineMatchesSelection(line: string, selectedName: string | null): boolean {
-  if (!selectedName) return false;
-  return line.includes(`name="${selectedName}"`);
-}
-
 function SourceFileBlock({
   file,
-  selectedName,
+  matchLine,
 }: {
   file: SourceFile;
-  selectedName: string | null;
+  matchLine: number;
 }) {
   const lines = useMemo(() => file.text.split("\n"), [file.text]);
-  const firstMatch = useMemo(
-    () => lines.findIndex((l) => lineMatchesSelection(l, selectedName)),
-    [lines, selectedName],
-  );
 
   return (
     <section className={`source-file${file.editable ? "" : " readonly"}`}>
@@ -130,9 +122,9 @@ function SourceFileBlock({
         {lines.map((line, i) => (
           <div
             key={i}
-            className={`source-line${i === firstMatch ? " match" : ""}`}
+            className={`source-line${i === matchLine ? " match" : ""}`}
           >
-            {line || " "}
+            {line ? <XmlLine line={line} /> : " "}
           </div>
         ))}
       </pre>

@@ -2,6 +2,7 @@
 import { RgbaColorPicker } from "react-colorful";
 import type { Material } from "../../types/robot";
 import { useRobotStore } from "../../state/robotStore";
+import { useShallow } from "zustand/react/shallow";
 import { SelectField } from "./fields/SelectField";
 import { useFieldGate } from "./useFieldGate";
 
@@ -23,7 +24,7 @@ function toUrdf(p: { r: number; g: number; b: number; a: number }): [number, num
 }
 
 export function MaterialEditor({ value, onChange }: Props) {
-  const materials = useRobotStore((s) => s.robot?.materials ?? []);
+  const materials = useRobotStore(useShallow((s) => s.robot?.materials ?? []));
   const upsertMaterial = useRobotStore((s) => s.upsertMaterial);
   const gate = useFieldGate("material", value ?? "");
 

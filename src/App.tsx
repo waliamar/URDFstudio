@@ -2,6 +2,7 @@
 import { Toolbar } from "./components/layout/Toolbar";
 import { StatusBar } from "./components/layout/StatusBar";
 import { ResizeHandle } from "./components/layout/ResizeHandle";
+import { ErrorBoundary } from "./components/layout/ErrorBoundary";
 import { RobotTree } from "./components/tree/RobotTree";
 import { Viewport } from "./components/viewport/Viewport";
 import { Inspector } from "./components/inspector/Inspector";
@@ -30,12 +31,16 @@ export default function App() {
           className="tree-panel glass"
           style={{ flexBasis: layout.treeCollapsed ? 0 : layout.treeW, display: layout.treeCollapsed ? "none" : undefined }}
         >
-          <RobotTree />
+          <ErrorBoundary label="Tree">
+            <RobotTree />
+          </ErrorBoundary>
         </div>
         <ResizeHandle panel="tree" orientation="vertical" direction={1} />
 
         <div className="viewport-panel glass">
-          <Viewport />
+          <ErrorBoundary label="Viewport">
+            <Viewport />
+          </ErrorBoundary>
         </div>
 
         <ResizeHandle panel="inspector" orientation="vertical" direction={-1} />
@@ -43,7 +48,9 @@ export default function App() {
           className="inspector-panel glass"
           style={{ flexBasis: layout.inspectorCollapsed ? 0 : layout.inspectorW, display: layout.inspectorCollapsed ? "none" : undefined }}
         >
-          <Inspector />
+          <ErrorBoundary label="Inspector">
+            <Inspector />
+          </ErrorBoundary>
         </div>
       </div>
 
@@ -68,7 +75,9 @@ export default function App() {
         </div>
         {!layout.bottomCollapsed && (
           <div className="tab-content">
-            {bottomTab === "problems" ? <ProblemsPanel /> : <XmlPreview />}
+            <ErrorBoundary label={bottomTab === "problems" ? "Problems" : "XML Preview"}>
+              {bottomTab === "problems" ? <ProblemsPanel /> : <XmlPreview />}
+            </ErrorBoundary>
           </div>
         )}
       </div>
