@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useSelectionStore } from "../../state/selectionStore";
+import { useRobotStore } from "../../state/robotStore";
 
 /** Unity Scene-view navigation: plain LMB stays free for selection; Alt+LMB
  *  orbits; MMB pans; RMB/scroll zoom; F frames the selected link. */
@@ -21,7 +22,17 @@ export function useViewportControls(
       const sel = useSelectionStore.getState().selected;
       const cc = controls.current;
       if (!sel || !cc) return;
-      const obj = scene.getObjectByName(`link:${sel.name}`);
+      let linkName: string;
+      if (sel.kind === "joint") {
+        const joint = useRobotStore.getState().robot?.joints.find(
+          (j) => j.name === sel.name,
+        );
+        if (!joint) return;
+        linkName = joint.child;
+      } else {
+        linkName = sel.name;
+      }
+      const obj = scene.getObjectByName(`link:${linkName}`);
       if (!obj) return;
       const pos = new THREE.Vector3();
       obj.getWorldPosition(pos);
