@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRobotStore } from "../../../state/robotStore";
 import { scrubMultiplier, applyScrub } from "../../../lib/scrub";
+import { decimalsOf, displayValue, editSeed } from "../../../lib/numberFormat";
 
 interface Props {
   label?: string;
@@ -14,12 +15,6 @@ interface Props {
   onCommit?: (value: number) => void;
   /** Render immutable (no scrub, no typing) — e.g. macro-derived xacro field. */
   disabled?: boolean;
-}
-
-function decimalsOf(step: number): number {
-  const s = String(step);
-  const d = s.includes(".") ? s.split(".")[1].length : 0;
-  return Math.min(Math.max(d, 1), 4);
 }
 
 /** Unity-style number field: drag the label to scrub, click the value to type. */
@@ -39,7 +34,7 @@ export function NumberField({
   const scrubbing = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const display = value.toFixed(precision);
+  const display = displayValue(value, precision);
 
   useEffect(() => {
     if (editing) inputRef.current?.select();
@@ -80,7 +75,7 @@ export function NumberField({
   }, []);
 
   // ── click to edit ──
-  const startEdit = () => { if (disabled) return; setText(display); setEditing(true); };
+  const startEdit = () => { if (disabled) return; setText(editSeed(value)); setEditing(true); };
   const commit = (ok: boolean) => {
     if (ok) {
       const n = parseFloat(text);
