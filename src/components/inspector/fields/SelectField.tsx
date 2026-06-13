@@ -58,7 +58,7 @@ export function SelectField({ label, value, options, onChange }: Props) {
     if (e.key === "Escape") { e.preventDefault(); close(); }
     else if (e.key === "ArrowDown") { e.preventDefault(); setHighlight((h) => Math.min(opts.length - 1, h + 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight((h) => Math.max(0, h - 1)); }
-    else if (e.key === "Enter") { e.preventDefault(); pick(opts[highlight].value); }
+    else if (e.key === "Enter") { e.preventDefault(); if (opts[highlight]) pick(opts[highlight].value); }
   };
 
   return (
