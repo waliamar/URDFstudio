@@ -6,3 +6,7 @@ target/
 
 # Superpowers brainstorm scratch (local tooling state)
 .superpowers/
+
+# Internal docs kept local-only (not published to the repo)
+NEXT_SESSION.md
+URDF_Studio_PRD.md
