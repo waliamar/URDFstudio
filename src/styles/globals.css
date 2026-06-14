@@ -490,3 +490,82 @@ pre.xml-preview {
   width: 100%;
   height: 140px;
 }
+
+/* ── Error boundary (diagnostic) ── */
+.error-boundary {
+  padding: 10px;
+  overflow: auto;
+  height: 100%;
+  color: var(--error);
+}
+.error-boundary-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.error-boundary-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+/* ── XML syntax highlighting (VS Code Dark+ palette) ── */
+.xtok-tag { color: #569cd6; }
+.xtok-attr { color: #9cdcfe; }
+.xtok-string { color: #ce9178; }
+.xtok-comment { color: #6a9955; font-style: italic; }
+.xtok-punct { color: #808080; }
+/* .xtok-text inherits the default preview text color */
+
+/* ── Custom dropdown (mimics the xyz number pills) ── */
+.select-trigger {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  color: var(--text);
+  background: var(--inset);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 4px 9px;
+  cursor: pointer;
+  text-align: left;
+}
+.select-trigger:hover { background: var(--glass-hover); }
+.select-trigger.open { border-color: var(--text-dim); }
+.select-trigger .select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-trigger .select-chevron {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: 10px;
+}
+.select-menu {
+  z-index: 1000;
+  max-height: 240px;
+  overflow: auto;
+  padding: 4px;
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+.select-option {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.select-option.active { background: var(--glass-hover); }
+.select-option.selected { background: var(--glass-sel); color: var(--text-bright); }

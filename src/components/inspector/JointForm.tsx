@@ -1,6 +1,7 @@
 // src/components/inspector/JointForm.tsx
 import type { Joint, JointType, JointLimit } from "../../types/robot";
 import { useRobotStore } from "../../state/robotStore";
+import { useShallow } from "zustand/react/shallow";
 import { useSelectionStore } from "../../state/selectionStore";
 import { PoseEditor } from "./PoseEditor";
 import { NumberField } from "./fields/NumberField";
@@ -17,7 +18,7 @@ const defaultLimit: JointLimit = { lower: -1.57, upper: 1.57, effort: 10, veloci
 export function JointForm({ joint }: { joint: Joint }) {
   const updateJoint = useRobotStore((s) => s.updateJoint);
   const renameJoint = useRobotStore((s) => s.renameJoint);
-  const linkNames = useRobotStore((s) => s.robot?.links.map((l) => l.name) ?? []);
+  const linkNames = useRobotStore(useShallow((s) => s.robot?.links.map((l) => l.name) ?? []));
   const select = useSelectionStore((s) => s.select);
   const gate = useFieldGate("joint", joint.name);
 

@@ -9,6 +9,15 @@ export function rpyToEuler(rpy: [number, number, number]): THREE.Euler {
   return new THREE.Euler(roll, pitch, yaw, "ZYX");
 }
 
+/** Inverse of rpyToEuler: a three.js Euler -> URDF rpy = [roll, pitch, yaw].
+ *  Reorders to "ZYX" first so the components line up with URDF's fixed-axis
+ *  X-Y-Z convention, preserving the orientation. */
+export function eulerToRpy(euler: THREE.Euler): [number, number, number] {
+  const e = euler.clone();
+  if (e.order !== "ZYX") e.reorder("ZYX");
+  return [e.x, e.y, e.z];
+}
+
 export function radToDeg(rad: number): number {
   return (rad * 180) / Math.PI;
 }
