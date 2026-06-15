@@ -10,3 +10,7 @@ target/
 # Internal docs kept local-only (not published to the repo)
 NEXT_SESSION.md
 URDF_Studio_PRD.md
+
+# Generated mobile icons (desktop release only)
+src-tauri/icons/android/
+src-tauri/icons/ios/
