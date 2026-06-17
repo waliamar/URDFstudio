@@ -6,6 +6,7 @@ target/
 
 # Superpowers brainstorm scratch (local tooling state)
 .superpowers/
+docs/superpowers/
 
 # Internal docs kept local-only (not published to the repo)
 NEXT_SESSION.md
